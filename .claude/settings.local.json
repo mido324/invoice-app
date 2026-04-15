@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mv /Users/mo/Desktop/ai-projects/invoice-app-src/* /Users/mo/Desktop/ai-projects/invoice-app/)",
+      "Bash(mv /Users/mo/Desktop/ai-projects/invoice-app-src/.gitignore /Users/mo/Desktop/ai-projects/invoice-app/)",
+      "Bash(rmdir /Users/mo/Desktop/ai-projects/invoice-app-src)",
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(npm run *)"
+    ]
+  }
+}
