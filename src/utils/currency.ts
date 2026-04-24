@@ -46,3 +46,34 @@ export function roundForCurrency(amount: number, currency: CurrencyCode): number
 export function currencySymbol(currency: CurrencyCode): string {
   return CURRENCIES[currency].symbol;
 }
+
+/**
+ * Rounds `amount` to the nearest multiple of `step`.
+ *
+ * Primary use-case: Iraqi Dinar (IQD) invoices, where the smallest
+ * physical banknote in common circulation is 250 IQD.  Rounding the
+ * invoice total to the nearest 250 means the customer can pay in exact
+ * notes without needing change.
+ *
+ * @param amount - The raw numeric total
+ * @param step   - The rounding step (e.g. 250 for IQD)
+ * @returns        Amount rounded to the nearest `step`
+ *
+ * @example
+ * roundToNearest(15_620, 250) // → 15_500  (rounds down)
+ * roundToNearest(15_680, 250) // → 15_750  (rounds up)
+ * roundToNearest(15_750, 250) // → 15_750  (already exact)
+ */
+export function roundToNearest(amount: number, step: number): number {
+  if (step <= 0) return amount;
+  return Math.round(amount / step) * step;
+}
+
+/**
+ * Returns the rounding step for a currency.
+ * IQD → 250  (smallest common banknote)
+ * All others → 0  (no note-rounding needed)
+ */
+export function noteRoundingStep(currency: CurrencyCode): number {
+  return currency === 'IQD' ? 250 : 0;
+}

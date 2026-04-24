@@ -65,12 +65,21 @@ const ar = {
     save: 'حفظ',
     cancel: 'إلغاء',
     delete: 'حذف',
+    duplicate: 'نسخ',
     print: 'طباعة / تصدير PDF',
     edit: 'تعديل',
     confirm: 'تأكيد',
     confirmDelete: 'هل أنت متأكد من الحذف؟',
+    undo: 'تراجع',
+
+    // Feedback
+    savedSuccess: 'تم حفظ الفاتورة!',
+    noProfileSelected: 'اختر ملفاً تجارياً قبل الحفظ',
+    invoiceDeleted: 'تم حذف الفاتورة',
+    createFirstInvoice: 'أنشئ فاتورتك الأولى',
 
     // Misc
+    roundToNotes: 'تقريب إلى أقرب {{step}} دينار',
     noInvoices: 'لا توجد فواتير بعد.',
     language: 'اللغة',
     english: 'English',

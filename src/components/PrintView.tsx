@@ -36,8 +36,9 @@ export default function PrintView({ invoice, profile, onClose }: Props) {
   /** Sets a descriptive document.title so the browser uses it as the PDF filename. */
   function handlePrint() {
     const prev = document.title;
-    const storeName = (profile?.storeName ?? 'Invoice').replace(/\s+/g, '_');
-    const client    = (invoice.clientName  ?? 'Client' ).replace(/\s+/g, '_');
+    const sanitize  = (s: string) => s.replace(/[\\/:*?"<>|\s]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+    const storeName = sanitize(profile?.storeName ?? 'Invoice');
+    const client    = sanitize(invoice.clientName  ?? 'Client');
     const date      =  invoice.date         ?? new Date().toISOString().split('T')[0];
     document.title  = `${storeName}_${client}_${date}`;
     window.print();

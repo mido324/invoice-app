@@ -65,12 +65,21 @@ const en = {
     save: 'Save',
     cancel: 'Cancel',
     delete: 'Delete',
+    duplicate: 'Duplicate',
     print: 'Print / Export PDF',
     edit: 'Edit',
     confirm: 'Confirm',
     confirmDelete: 'Are you sure you want to delete this?',
+    undo: 'Undo',
+
+    // Feedback
+    savedSuccess: 'Invoice saved!',
+    noProfileSelected: 'Select a business profile before saving',
+    invoiceDeleted: 'Invoice deleted',
+    createFirstInvoice: 'Create Your First Invoice',
 
     // Misc
+    roundToNotes: 'Round to nearest {{step}} (IQD notes)',
     noInvoices: 'No invoices yet.',
     language: 'Language',
     english: 'English',

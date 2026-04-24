@@ -18,12 +18,13 @@ export interface CurrencyMeta {
 }
 
 export const CURRENCIES: Record<CurrencyCode, CurrencyMeta> = {
-  // ── 3-decimal Gulf & regional dinars ──
-  IQD: { symbol: 'IQD', decimals: 3, name: 'Iraqi Dinar',    nameAr: 'دينار عراقي' },
-  BHD: { symbol: 'BD',  decimals: 3, name: 'Bahraini Dinar', nameAr: 'دينار بحريني' },
-  KWD: { symbol: 'KD',  decimals: 3, name: 'Kuwaiti Dinar',  nameAr: 'دينار كويتي' },
-  JOD: { symbol: 'JD',  decimals: 3, name: 'Jordanian Dinar',nameAr: 'دينار أردني' },
-  OMR: { symbol: 'OMR', decimals: 3, name: 'Omani Rial',     nameAr: 'ريال عُماني' },
+  // ── 0-decimal local Dinar ──
+  IQD: { symbol: 'IQD', decimals: 0, name: 'Iraqi Dinar',    nameAr: 'دينار عراقي' },
+  // ── 2-decimal Gulf & regional currencies ──
+  BHD: { symbol: 'BD',  decimals: 2, name: 'Bahraini Dinar', nameAr: 'دينار بحريني' },
+  KWD: { symbol: 'KD',  decimals: 2, name: 'Kuwaiti Dinar',  nameAr: 'دينار كويتي' },
+  JOD: { symbol: 'JD',  decimals: 2, name: 'Jordanian Dinar',nameAr: 'دينار أردني' },
+  OMR: { symbol: 'OMR', decimals: 2, name: 'Omani Rial',     nameAr: 'ريال عُماني' },
   // ── 2-decimal Gulf currencies ──
   SAR: { symbol: 'SAR', decimals: 2, name: 'Saudi Riyal',    nameAr: 'ريال سعودي' },
   AED: { symbol: 'AED', decimals: 2, name: 'UAE Dirham',     nameAr: 'درهم إماراتي' },

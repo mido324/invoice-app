@@ -75,9 +75,12 @@ export async function updateSettings(patch: Partial<AppSettings>): Promise<void>
  * Format: INV-YYYY-NNNN  (e.g. INV-2024-0003)
  */
 export async function nextInvoiceNumber(): Promise<string> {
-  const s = await getSettings();
-  const year = new Date().getFullYear();
-  const num = String(s.invoiceSequence).padStart(4, '0');
-  await updateSettings({ invoiceSequence: s.invoiceSequence + 1 });
-  return `INV-${year}-${num}`;
+  return db.transaction('rw', db.settings, async () => {
+    const s = await db.settings.get(1);
+    if (!s) throw new Error('Settings not initialized');
+    const year = new Date().getFullYear();
+    const num = String(s.invoiceSequence).padStart(4, '0');
+    await db.settings.update(1, { invoiceSequence: s.invoiceSequence + 1 });
+    return `INV-${year}-${num}`;
+  });
 }

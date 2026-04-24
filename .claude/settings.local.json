@@ -7,7 +7,15 @@
       "Bash(npm install *)",
       "Bash(npx tsc *)",
       "Bash(echo \"EXIT:$?\")",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(npm info *)",
+      "Bash(node -e \"const v=JSON.parse\\(require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\)\\); console.log\\(v.slice\\(-5\\).join\\('\\\\n'\\)\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(echo \"Exit: $?\")",
+      "mcp__plugin_claude-mem_mcp-search__get_observations",
+      "mcp__plugin_claude-mem_mcp-search__smart_outline",
+      "mcp__plugin_claude-mem_mcp-search__smart_search",
+      "mcp__plugin_claude-mem_mcp-search__smart_unfold"
     ]
   }
 }

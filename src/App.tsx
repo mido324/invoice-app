@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { FilePlus, List, Users, ChevronDown, Globe } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { ProfileProvider, useProfile } from './context/ProfileContext';
-import { initSettings, getSettings, updateSettings } from './db/db';
+import { ToastProvider } from './components/Toast';
+import { initSettings, getSettings, updateSettings, nextInvoiceNumber } from './db/db';
 import InvoiceForm from './components/InvoiceForm';
 import InvoiceList from './components/InvoiceList';
 import ProfileManager from './components/ProfileManager';
@@ -13,17 +14,47 @@ import { CURRENCIES, type CurrencyCode } from './types';
 
 type View = 'new' | 'list' | 'profiles';
 
-// Sanitize user-provided data to prevent XSS attacks, especially for printing.
-function sanitizeInvoiceData(invoice: Invoice): Invoice {
-  const sanitized = { ...invoice }; // Create a shallow copy
-  // Sanitize potentially risky string fields, providing fallbacks for null/undefined.
-  sanitized.clientName = DOMPurify.sanitize(sanitized.clientName || '');
-  sanitized.invoiceNumber = DOMPurify.sanitize(sanitized.invoiceNumber || '');
-  sanitized.items = sanitized.items.map((item) => ({
-    ...item,
-    description: DOMPurify.sanitize(item.description || ''),
-  }));
-  return sanitized;
+/**
+ * Sanitizes every user-supplied string field on an Invoice before it reaches
+ * PrintView.  React escapes text nodes automatically, but DOMPurify also
+ * neutralises any HTML/script that could be injected via dangerouslySetInnerHTML
+ * or future copy-paste from an untrusted source.
+ *
+ * BUG FIX: previous version missed item.item, clientEmail, clientPhone,
+ * clientAddress, and notes — all rendered verbatim in PrintView.
+ */
+function sanitizeInvoice(invoice: Invoice): Invoice {
+  const s = DOMPurify.sanitize.bind(DOMPurify);
+  return {
+    ...invoice,
+    invoiceNumber:   s(invoice.invoiceNumber   || ''),
+    clientName:      s(invoice.clientName      || ''),
+    clientEmail:     s(invoice.clientEmail     || ''),
+    clientPhone:     s(invoice.clientPhone     || ''),
+    clientAddress:   s(invoice.clientAddress   || ''),
+    notes:           s(invoice.notes           || ''),
+    items: invoice.items.map((item) => ({
+      ...item,
+      item:        s(item.item        || ''),   // product name — was missing
+      description: s(item.description || ''),
+    })),
+  };
+}
+
+/**
+ * Sanitizes the profile fields that are rendered in the PrintView header.
+ * BUG FIX: previous version sanitized a non-existent `contact` field and
+ * left `phone` and `email` unsanitized.
+ */
+function sanitizeProfile(profile: NonNullable<Parameters<typeof PrintView>[0]['profile']>) {
+  const s = DOMPurify.sanitize.bind(DOMPurify);
+  return {
+    ...profile,
+    storeName: s(profile.storeName || ''),
+    address:   s(profile.address   || ''),
+    phone:     s(profile.phone     || ''),
+    email:     s(profile.email     || ''),
+  };
 }
 
 function Shell() {
@@ -59,16 +90,26 @@ function Shell() {
     setView('new');
   }
 
+  async function handleDuplicate(inv: Invoice) {
+    const newNumber = await nextInvoiceNumber();
+    const today = new Date().toISOString().split('T')[0];
+    const { id: _id, ...rest } = inv;
+    setEditingInvoice({
+      ...rest,
+      invoiceNumber: newNumber,
+      date: today,
+      status: 'draft',
+      amountPaid: 0,
+      remainingBalance: rest.totalAmount,
+    } as Invoice);
+    setView('new');
+  }
+
   if (printInvoice && activeProfile) {
     return (
       <PrintView
-        invoice={sanitizeInvoiceData(printInvoice)}
-        profile={{
-          ...activeProfile,
-          storeName: DOMPurify.sanitize(activeProfile.storeName || ''),
-          address: DOMPurify.sanitize(activeProfile.address || ''),
-          contact: DOMPurify.sanitize(activeProfile.contact || ''),
-        }}
+        invoice={sanitizeInvoice(printInvoice)}
+        profile={sanitizeProfile(activeProfile)}
         onClose={() => setPrintInvoice(null)}
       />
     );
@@ -168,6 +209,8 @@ function Shell() {
           <InvoiceList
             onEdit={(inv) => { setEditingInvoice(inv); setView('new'); }}
             onPrint={setPrintInvoice}
+            onDuplicate={handleDuplicate}
+            onCreateNew={handleNewInvoice}
             reloadKey={listReloadKey}
           />
         )}
@@ -212,7 +255,9 @@ export default function App() {
 
   return (
     <ProfileProvider>
-      <Shell />
+      <ToastProvider>
+        <Shell />
+      </ToastProvider>
     </ProfileProvider>
   );
 }

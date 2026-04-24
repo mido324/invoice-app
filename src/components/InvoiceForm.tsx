@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PlusCircle, Trash2, Printer } from 'lucide-react';
+import { useToast } from './Toast';
 import { db, nextInvoiceNumber } from '../db/db';
 import { useProfile } from '../context/ProfileContext';
 import { calcLineTotal, calcTotals } from '../utils/invoiceCalc';
-import { formatCurrency } from '../utils/currency';
+import { formatCurrency, roundToNearest, noteRoundingStep } from '../utils/currency';
+import SmartPriceInput from './SmartPriceInput';
 import type { Invoice, LineItem, InvoiceStatus } from '../types';
 
 /** Generates a random UUID using the Web Crypto API (no external dep needed). */
@@ -33,6 +35,7 @@ interface Props {
 export default function InvoiceForm({ existing, onSaved, onPrint }: Props) {
   const { t } = useTranslation();
   const { activeProfile, activeCurrency } = useProfile();
+  const { showToast } = useToast();
 
   // ── Header fields ──────────────────────────────────────────────
   const [invoiceNumber, setInvoiceNumber] = useState('');
@@ -53,8 +56,21 @@ export default function InvoiceForm({ existing, onSaved, onPrint }: Props) {
   const [discount, setDiscount] = useState(0);
   const [amountPaid, setAmountPaid] = useState(0);
 
-  // ── Derived totals (recomputed on every render) ─────────────────
-  const totals = calcTotals(items, taxRate, discount, amountPaid, activeCurrency);
+  // ── IQD note-rounding (round total to nearest 250 IQD) ──────────
+  const [roundNotes, setRoundNotes] = useState(false);
+
+  // ── Derived totals ──────────────────────────────────────────────
+  const baseTotals = calcTotals(items, taxRate, discount, amountPaid, activeCurrency);
+  const noteStep   = noteRoundingStep(activeCurrency);
+  const roundedTotal = roundNotes && noteStep > 0
+    ? roundToNearest(baseTotals.totalAmount, noteStep)
+    : baseTotals.totalAmount;
+  const roundingDiff = roundedTotal - baseTotals.totalAmount; // + means rounded up, - means rounded down
+  const totals = {
+    ...baseTotals,
+    totalAmount:      roundedTotal,
+    remainingBalance: Math.max(0, roundedTotal - amountPaid),
+  };
 
   // Populate form when editing an existing invoice
   useEffect(() => {
@@ -72,11 +88,22 @@ export default function InvoiceForm({ existing, onSaved, onPrint }: Props) {
       setTaxRate(existing.taxRate);
       setDiscount(existing.discount);
       setAmountPaid(existing.amountPaid);
+      setRoundNotes(false);
     } else {
-      // New invoice — generate a number
       nextInvoiceNumber().then(setInvoiceNumber);
+      setRoundNotes(false);
     }
   }, [existing]);
+
+  // Recompute all lineTotals when the active currency changes (decimal precision may differ)
+  useEffect(() => {
+    setItems((prev) =>
+      prev.map((item) => ({
+        ...item,
+        lineTotal: calcLineTotal(item.unitPrice, item.quantity, activeCurrency),
+      })),
+    );
+  }, [activeCurrency]);
 
   // ── Line item helpers ───────────────────────────────────────────
 
@@ -126,6 +153,10 @@ export default function InvoiceForm({ existing, onSaved, onPrint }: Props) {
   }
 
   async function handleSave() {
+    if (!activeProfile?.id) {
+      showToast(t('noProfileSelected'), 'error');
+      return;
+    }
     const data = await buildInvoice();
     let saved: Invoice;
     if (existing?.id != null) {
@@ -135,10 +166,15 @@ export default function InvoiceForm({ existing, onSaved, onPrint }: Props) {
       const id = await db.invoices.add(data as Invoice);
       saved = { ...data, id };
     }
+    showToast(t('savedSuccess'));
     onSaved?.(saved);
   }
 
   async function handlePrint() {
+    if (!activeProfile?.id) {
+      showToast(t('noProfileSelected'), 'error');
+      return;
+    }
     const data = await buildInvoice();
     // Auto-save before printing so the print view always has a persisted record
     let saved: Invoice;
@@ -289,7 +325,7 @@ export default function InvoiceForm({ existing, onSaved, onPrint }: Props) {
         {items.map((item) => (
           <div
             key={item.id}
-            className="grid grid-cols-1 md:grid-cols-[1.2fr_2fr_120px_72px_110px_36px] gap-2 items-start"
+            className="mobile-item-grid md:grid-cols-[1.2fr_2fr_120px_72px_110px_36px] gap-2 items-start mb-4 pb-4 border-b md:mb-0 md:pb-0 border-gray-100 md:border-none"
           >
             {/* Product / item name */}
             <input
@@ -306,18 +342,16 @@ export default function InvoiceForm({ existing, onSaved, onPrint }: Props) {
               rows={2}
               placeholder={t('description')}
             />
-            <input
-              type="number"
-              min={0}
-              step="any"
-              value={item.unitPrice === 0 ? '' : item.unitPrice}
-              onChange={(e) => updateItem(item.id, { unitPrice: parseFloat(e.target.value) || 0 })}
+            <SmartPriceInput
+              value={item.unitPrice}
+              onChange={(val) => updateItem(item.id, { unitPrice: val })}
+              currency={activeCurrency}
               className="input text-right"
               placeholder="0.00"
             />
             <input
-              type="number"
-              min={1}
+              type="text"
+              inputMode="decimal"
               value={item.quantity}
               onChange={(e) => updateItem(item.id, { quantity: parseInt(e.target.value) || 1 })}
               className="input text-right"
@@ -353,9 +387,8 @@ export default function InvoiceForm({ existing, onSaved, onPrint }: Props) {
             <label className="text-sm text-gray-600 flex-1">{t('taxRate')}</label>
             <div className="flex items-center gap-1">
               <input
-                type="number"
-                min={0}
-                max={100}
+                type="text"
+                inputMode="decimal"
                 value={taxRate}
                 onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
                 className="input w-20 text-right"
@@ -368,12 +401,10 @@ export default function InvoiceForm({ existing, onSaved, onPrint }: Props) {
 
           <div className="flex items-center gap-2">
             <label className="text-sm text-gray-600 flex-1">{t('discount')}</label>
-            <input
-              type="number"
-              min={0}
-              step="any"
-              value={discount === 0 ? '' : discount}
-              onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
+            <SmartPriceInput
+              value={discount}
+              onChange={(val) => setDiscount(val)}
+              currency={activeCurrency}
               className="input w-32 text-right"
               placeholder="0.00"
             />
@@ -383,14 +414,41 @@ export default function InvoiceForm({ existing, onSaved, onPrint }: Props) {
             <TotalRow label={t('totalAmount')} value={fmt(totals.totalAmount)} bold />
           </div>
 
+          {/* IQD note-rounding toggle — only shown when active currency is IQD */}
+          {noteStep > 0 && (
+            <div className="flex items-center justify-between gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              <div className="flex flex-col">
+                <span className="text-xs font-semibold text-amber-800">
+                  {t('roundToNotes', { step: noteStep })}
+                </span>
+                {roundNotes && roundingDiff !== 0 && (
+                  <span className="text-xs text-amber-600 font-mono">
+                    {roundingDiff > 0 ? '+' : ''}{fmt(roundingDiff)}
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setRoundNotes((v) => !v)}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${
+                  roundNotes ? 'bg-amber-500' : 'bg-gray-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
+                    roundNotes ? 'translate-x-4' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+          )}
+
           <div className="flex items-center gap-2">
             <label className="text-sm text-gray-600 flex-1">{t('amountPaid')}</label>
-            <input
-              type="number"
-              min={0}
-              step="any"
-              value={amountPaid === 0 ? '' : amountPaid}
-              onChange={(e) => setAmountPaid(parseFloat(e.target.value) || 0)}
+            <SmartPriceInput
+              value={amountPaid}
+              onChange={(val) => setAmountPaid(val)}
+              currency={activeCurrency}
               className="input w-32 text-right"
               placeholder="0.00"
             />
