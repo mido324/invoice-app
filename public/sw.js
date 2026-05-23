@@ -11,7 +11,7 @@
  * The `activate` handler deletes all old caches automatically.
  */
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const CACHE_NAME    = `invoice-app-${CACHE_VERSION}`;
 
 /** Resources to pre-cache on install (the minimal app shell). */

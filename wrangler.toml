@@ -1,0 +1,4 @@
+# Cloudflare Pages — ensure the Vite build output is deployed, not repo root.
+name = "invoice-app"
+pages_build_output_dir = "dist"
+compatibility_date = "2024-01-01"
