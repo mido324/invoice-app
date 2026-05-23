@@ -1,19 +1,22 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FilePlus, List, Users, ChevronDown, Globe } from 'lucide-react';
+import { FilePlus, List, Users, ChevronDown } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { ProfileProvider, useProfile } from './context/ProfileContext';
 import { ToastProvider } from './components/Toast';
-import { initSettings, getSettings, updateSettings, nextInvoiceNumber } from './db/db';
+import { initSettings, getSettings, nextInvoiceNumber } from './db/db';
 import InvoiceForm from './components/InvoiceForm';
 import InvoiceList from './components/InvoiceList';
 import ProfileManager from './components/ProfileManager';
 import PrintView from './components/PrintView';
 import SupportBanner from './components/SupportBanner';
 import MilestoneModal from './components/MilestoneModal';
-import { shouldShowMilestone } from './utils/milestoneTracker';
+import LanguageSwitcher from './components/LanguageSwitcher';
+import { useDocumentDirection } from './i18n/hooks/useDocumentDirection';
+import { isSupportedLanguage, normalizeLanguageCode } from './i18n/languages';
 import type { Invoice } from './types';
 import { CURRENCIES, type CurrencyCode } from './types';
+import { shouldShowMilestone } from './utils/milestoneTracker';
 
 type View = 'new' | 'list' | 'profiles';
 
@@ -61,7 +64,8 @@ function sanitizeProfile(profile: NonNullable<Parameters<typeof PrintView>[0]['p
 }
 
 function Shell() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const { isRtl } = useDocumentDirection();
   const { activeProfile, activeCurrency, profiles, setActiveProfileId } = useProfile();
 
   const [view, setView] = useState<View>('new');
@@ -70,18 +74,6 @@ function Shell() {
   const [listReloadKey, setListReloadKey] = useState(0);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [showMilestone, setShowMilestone] = useState(false);
-
-  const isRtl = i18n.language === 'ar';
-
-  useEffect(() => {
-    document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
-    document.documentElement.lang = i18n.language;
-  }, [isRtl, i18n.language]);
-
-  async function switchLanguage(lang: 'en' | 'ar') {
-    await i18n.changeLanguage(lang);
-    await updateSettings({ language: lang });
-  }
 
   function handleSaved(_invoice: Invoice) {
     setListReloadKey((k) => k + 1);
@@ -158,13 +150,7 @@ function Shell() {
 
         {/* Right: language toggle + profile switcher */}
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => switchLanguage(isRtl ? 'en' : 'ar')}
-            className="flex items-center gap-1 text-xs text-slate-300 hover:text-white px-2 py-1 rounded-lg hover:bg-slate-700 transition-colors"
-          >
-            <Globe size={14} />
-            {isRtl ? 'EN' : 'عربي'}
-          </button>
+          <LanguageSwitcher variant="navbar" />
 
           {profiles.length > 0 && (
             <div className="relative">
@@ -253,13 +239,15 @@ function Shell() {
 export default function App() {
   const [ready, setReady] = useState(false);
   const { i18n } = useTranslation();
+  useDocumentDirection();
 
   useEffect(() => {
     initSettings()
       .then(async () => {
         const s = await getSettings();
-        if (s.language && s.language !== i18n.language) {
-          await i18n.changeLanguage(s.language);
+        const saved = normalizeLanguageCode(s.language);
+        if (saved && isSupportedLanguage(saved) && saved !== normalizeLanguageCode(i18n.language)) {
+          await i18n.changeLanguage(saved);
         }
       })
       .catch((err) => {

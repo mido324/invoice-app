@@ -5,6 +5,7 @@ import { db } from '../db/db';
 import { useProfile } from '../context/ProfileContext';
 import type { Profile, CurrencyCode } from '../types';
 import { CURRENCIES } from '../types';
+import { isRtlLanguage } from '../i18n/languages';
 
 const EMPTY_FORM: Omit<Profile, 'id' | 'createdAt'> = {
   storeName: '',
@@ -21,7 +22,7 @@ const EMPTY_FORM: Omit<Profile, 'id' | 'createdAt'> = {
  */
 export default function ProfileManager() {
   const { t, i18n } = useTranslation();
-  const isRtl = i18n.language === 'ar';
+  const isRtl = isRtlLanguage(i18n.language);
   const { profiles, activeProfile, setActiveProfileId, reloadProfiles } = useProfile();
 
   const [editing, setEditing] = useState<Profile | null>(null);

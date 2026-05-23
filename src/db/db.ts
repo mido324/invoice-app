@@ -42,15 +42,21 @@ export const db = new InvoiceDB();
  * Call once at app startup.
  */
 export async function initSettings(): Promise<void> {
-  const existing = await db.settings.get(1);
-  if (!existing) {
-    await db.settings.add({
-      id: 1,
-      activeProfileId: null,
-      language: 'en',
-      invoiceSequence: 1,
-    });
-  }
+  await db.transaction('rw', db.settings, async () => {
+    const existing = await db.settings.get(1);
+    if (existing) return;
+    try {
+      await db.settings.add({
+        id: 1,
+        activeProfileId: null,
+        language: 'en',
+        invoiceSequence: 1,
+      });
+    } catch (err) {
+      // React StrictMode double-mount can race two inits; row may exist by now.
+      if (!(err instanceof Dexie.ConstraintError)) throw err;
+    }
+  });
 }
 
 /**

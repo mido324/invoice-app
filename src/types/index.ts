@@ -131,6 +131,8 @@ export interface Profile {
   createdAt: string;
 }
 
+import type { LanguageCode } from '../i18n/languages';
+
 /**
  * App-wide settings stored as a single key-value row in IndexedDB.
  */
@@ -138,8 +140,8 @@ export interface AppSettings {
   id?: number;
   /** Currently active profile ID */
   activeProfileId: number | null;
-  /** UI language: 'en' | 'ar' */
-  language: 'en' | 'ar';
+  /** UI language code (see SUPPORTED_LANGUAGES) */
+  language: LanguageCode;
   /** Next invoice sequence number (auto-incremented per save) */
   invoiceSequence: number;
 }

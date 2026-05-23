@@ -4,6 +4,7 @@ import { X, Printer } from 'lucide-react';
 import type { Invoice, Profile } from '../types';
 import { formatCurrency } from '../utils/currency';
 import { incrementPdfCount, shouldShowMilestone } from '../utils/milestoneTracker';
+import { isRtlLanguage } from '../i18n/languages';
 
 interface Props {
   invoice: Invoice;
@@ -30,7 +31,7 @@ interface Props {
 export default function PrintView({ invoice, profile, onClose, onMilestone }: Props) {
   const { t, i18n } = useTranslation();
   const invoiceRef = useRef<HTMLDivElement>(null);
-  const isRtl = i18n.language === 'ar';
+  const isRtl = isRtlLanguage(i18n.language);
   const dir = isRtl ? 'rtl' : 'ltr';
 
   const fmt = (n: number) => formatCurrency(n, invoice.currency);
