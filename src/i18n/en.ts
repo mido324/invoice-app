@@ -78,6 +78,16 @@ const en = {
     invoiceDeleted: 'Invoice deleted',
     createFirstInvoice: 'Create Your First Invoice',
 
+    // Support / monetization
+    supportPrivacyNote: '🔒 100% Private: Data stored entirely in your local browser. No cloud tracking.',
+    supportButton: 'Support the Dev (Pay what you want)',
+    milestoneTitle: 'Boom! {{count}} Invoices generated! 🎉',
+    milestoneBody: 'This app has no ads, no server tracking, and no premium fees. It runs on community tips from people like you.',
+    milestoneCta: '☕ Buy Me a Coffee',
+    milestoneSkip: 'Keep creating for free',
+    footerCta: 'Made with ❤️',
+    footerSupport: 'Support this project',
+
     // Misc
     roundToNotes: 'Round to nearest {{step}} (IQD notes)',
     noInvoices: 'No invoices yet.',

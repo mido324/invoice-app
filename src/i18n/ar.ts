@@ -78,6 +78,16 @@ const ar = {
     invoiceDeleted: 'تم حذف الفاتورة',
     createFirstInvoice: 'أنشئ فاتورتك الأولى',
 
+    // Support / monetization
+    supportPrivacyNote: '🔒 خصوصية تامة: بياناتك محفوظة في متصفحك فقط. لا تتبع سحابي.',
+    supportButton: 'ادعم المطوّر (ادفع ما تشاء)',
+    milestoneTitle: '🎉 !تهانينا! {{count}} فواتير جاهزة',
+    milestoneBody: 'هذا التطبيق بدون إعلانات، بدون تتبع، وبدون رسوم. يعمل بدعم المجتمع من أشخاص مثلك.',
+    milestoneCta: '☕ قدّم لي قهوة',
+    milestoneSkip: 'متابعة الاستخدام مجاناً',
+    footerCta: 'صُنع بـ ❤️',
+    footerSupport: 'ادعم هذا المشروع',
+
     // Misc
     roundToNotes: 'تقريب إلى أقرب {{step}} دينار',
     noInvoices: 'لا توجد فواتير بعد.',

@@ -9,6 +9,9 @@ import InvoiceForm from './components/InvoiceForm';
 import InvoiceList from './components/InvoiceList';
 import ProfileManager from './components/ProfileManager';
 import PrintView from './components/PrintView';
+import SupportBanner from './components/SupportBanner';
+import MilestoneModal from './components/MilestoneModal';
+import { shouldShowMilestone } from './utils/milestoneTracker';
 import type { Invoice } from './types';
 import { CURRENCIES, type CurrencyCode } from './types';
 
@@ -66,6 +69,7 @@ function Shell() {
   const [printInvoice, setPrintInvoice] = useState<Invoice | null>(null);
   const [listReloadKey, setListReloadKey] = useState(0);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [showMilestone, setShowMilestone] = useState(false);
 
   const isRtl = i18n.language === 'ar';
 
@@ -105,13 +109,21 @@ function Shell() {
     setView('new');
   }
 
+  function handleMilestoneCheck() {
+    if (shouldShowMilestone()) setShowMilestone(true);
+  }
+
   if (printInvoice && activeProfile) {
     return (
-      <PrintView
-        invoice={sanitizeInvoice(printInvoice)}
-        profile={sanitizeProfile(activeProfile)}
-        onClose={() => setPrintInvoice(null)}
-      />
+      <>
+        <PrintView
+          invoice={sanitizeInvoice(printInvoice)}
+          profile={sanitizeProfile(activeProfile)}
+          onClose={() => setPrintInvoice(null)}
+          onMilestone={handleMilestoneCheck}
+        />
+        {showMilestone && <MilestoneModal onClose={() => setShowMilestone(false)} />}
+      </>
     );
   }
 
@@ -188,6 +200,8 @@ function Shell() {
         </div>
       </nav>
 
+      <SupportBanner />
+
       <main className="flex-1 overflow-y-auto">
         {profiles.length === 0 && view !== 'profiles' && (
           <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 text-sm text-amber-700 flex items-center justify-between print:hidden">
@@ -216,6 +230,18 @@ function Shell() {
         )}
         {view === 'profiles' && <ProfileManager />}
       </main>
+
+      <footer className="bg-gray-50 border-t border-gray-200 py-3 text-center text-xs text-gray-400 print:hidden">
+        {t('footerCta')} ·{' '}
+        <a
+          href="https://buymeacoffee.com/secureinvoice"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-gray-500 hover:text-gray-700 underline underline-offset-2 transition-colors"
+        >
+          {t('footerSupport')}
+        </a>
+      </footer>
 
       {profileMenuOpen && (
         <div className="fixed inset-0 z-30" onClick={() => setProfileMenuOpen(false)} />

@@ -3,11 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { X, Printer } from 'lucide-react';
 import type { Invoice, Profile } from '../types';
 import { formatCurrency } from '../utils/currency';
+import { incrementPdfCount, shouldShowMilestone } from '../utils/milestoneTracker';
 
 interface Props {
   invoice: Invoice;
   profile: Profile | null;
   onClose: () => void;
+  onMilestone?: () => void;
 }
 
 /**
@@ -25,7 +27,7 @@ interface Props {
  * The element is then pulled to the top-left via `position: absolute; inset: 0`
  * so the @page margins are the only whitespace around the invoice.
  */
-export default function PrintView({ invoice, profile, onClose }: Props) {
+export default function PrintView({ invoice, profile, onClose, onMilestone }: Props) {
   const { t, i18n } = useTranslation();
   const invoiceRef = useRef<HTMLDivElement>(null);
   const isRtl = i18n.language === 'ar';
@@ -43,6 +45,8 @@ export default function PrintView({ invoice, profile, onClose }: Props) {
     document.title  = `${storeName}_${client}_${date}`;
     window.print();
     document.title  = prev;
+    incrementPdfCount();
+    if (onMilestone && shouldShowMilestone()) onMilestone();
   }
 
   const STATUS_COLORS: Record<string, string> = {
